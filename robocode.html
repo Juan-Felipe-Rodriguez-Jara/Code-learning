@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>RoboCode</title>
+<style>
+  :root{
+    --bg:#0B1120;
+    --surface:#111827;
+    --surface-2:#161f30;
+    --primary:#00D9FF;
+    --primary-dim:rgba(0,217,255,0.14);
+    --secondary:#6366F1;
+    --text:#F8FAFC;
+    --text-2:#94A3B8;
+    --success:#22C55E;
+    --warning:#F59E0B;
+    --border:rgba(148,163,184,0.14);
+    --font-body:'Segoe UI', system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+    --font-mono:ui-monospace, 'Cascadia Code', 'Fira Code', 'Consolas', 'SFMono-Regular', monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(circle at 12% 8%, rgba(99,102,241,0.16), transparent 40%),
+      radial-gradient(circle at 90% 0%, rgba(0,217,255,0.10), transparent 35%),
+      var(--bg);
+    background-attachment:fixed;
+    color:var(--text);
+    font-family:var(--font-body);
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    background-image:radial-gradient(circle at 1px 1px, rgba(0,217,255,0.08) 1px, transparent 0);
+    background-size:26px 26px;
+    pointer-events:none;
+    z-index:0;
+  }
+  #app{position:relative;z-index:1;max-width:640px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;padding-bottom:36px;}
+  button{font-family:inherit;cursor:pointer;}
+  a{color:inherit;}
+
+  /* ---------- Loading ---------- */
+  .boot{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:14px;color:var(--text-2);}
+  .boot .spinner{width:34px;height:34px;border-radius:50%;border:3px solid var(--border);border-top-color:var(--primary);animation:spin 0.9s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  /* ---------- Header ---------- */
+  .app-header{display:flex;align-items:center;justify-content:space-between;padding:20px 20px 6px;}
+  .brand{display:flex;flex-direction:column;gap:2px;}
+  .brand-name{display:flex;align-items:center;gap:8px;font-size:22px;font-weight:800;letter-spacing:0.3px;}
+  .brand-name .mark{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--primary),var(--secondary));display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 0 18px rgba(0,217,255,0.35);}
+  .brand-sub{font-size:12.5px;color:var(--text-2);}
+  .header-actions{display:flex;align-items:center;gap:10px;}
+  .pill{font-family:var(--font-mono);font-size:12px;color:var(--primary);background:var(--primary-dim);border:1px solid rgba(0,217,255,0.3);padding:5px 10px;border-radius:20px;}
+  .icon-btn{width:38px;height:38px;border-radius:11px;background:var(--surface);border:1px solid var(--border);color:var(--text-2);display:flex;align-items:center;justify-content:center;font-size:16px;transition:.15s;}
+  .icon-btn:hover{color:var(--primary);border-color:rgba(0,217,255,0.4);}
+
+  main{padding:14px 20px 10px;display:flex;flex-direction:column;gap:16px;}
+
+  /* ---------- Cards ---------- */
+  .card{background:linear-gradient(180deg,var(--surface),var(--surface-2));border:1px solid var(--border);border-radius:18px;padding:20px;}
+  .card-tight{padding:16px;}
+
+  .welcome-title{font-size:19px;font-weight:800;margin:0 0 6px;}
+  .welcome-text{font-size:14px;color:var(--text-2);line-height:1.55;margin:0 0 16px;}
+
+  .btn{border:none;border-radius:12px;padding:13px 18px;font-size:14.5px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:.15s;width:100%;}
+  .btn-primary{background:linear-gradient(135deg,var(--primary),#22c1ea);color:#03222b;box-shadow:0 6px 20px rgba(0,217,255,0.25);}
+  .btn-primary:hover{filter:brightness(1.06);}
+  .btn-primary:disabled{opacity:.4;cursor:not-allowed;filter:none;box-shadow:none;}
+  .btn-secondary{background:var(--surface-2);color:var(--text);border:1px solid var(--border);}
+  .btn-secondary:hover{border-color:rgba(0,217,255,0.35);color:var(--primary);}
+  .btn-ghost{background:transparent;color:var(--text-2);border:1px solid var(--border);}
+  .btn-ghost:hover{color:var(--text);}
+  .btn-sm{padding:9px 14px;font-size:13px;width:auto;}
+  .btn-danger{background:rgba(245,158,11,0.12);color:var(--warning);border:1px solid rgba(245,158,11,0.35);}
+
+  /* ---------- Progress card ---------- */
+  .level-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+  .level-tag{font-family:var(--font-mono);font-size:11.5px;letter-spacing:1.5px;color:var(--secondary);background:rgba(99,102,241,0.14);border:1px solid rgba(99,102,241,0.35);padding:4px 9px;border-radius:8px;}
+  .level-title{font-size:15px;font-weight:700;margin-top:6px;}
+  .level-pct{font-family:var(--font-mono);font-size:20px;font-weight:700;color:var(--primary);}
+  .progress-track{height:9px;border-radius:999px;background:rgba(148,163,184,0.12);overflow:hidden;margin:12px 0 10px;}
+  .progress-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--secondary),var(--primary));transition:width .5s ease;}
+  .progress-caption{font-size:12.5px;color:var(--text-2);font-family:var(--font-mono);}
+
+  /* ---------- Section title ---------- */
+  .section-title{font-size:14.5px;font-weight:700;color:var(--text);margin:2px 0 2px;}
+
+  /* ---------- Mode cards ---------- */
+  .mode-grid{display:grid;grid-template-columns:1fr;gap:12px;}
+  .mode-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px;position:relative;overflow:hidden;}
+  .mode-card::after{content:"";position:absolute;top:-40%;right:-20%;width:120px;height:120px;background:radial-gradient(circle,var(--accent-glow,rgba(0,217,255,.18)),transparent 70%);pointer-events:none;}
+  .mode-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:19px;background:var(--accent-bg);border:1px solid var(--accent-border);}
+  .mode-name{font-size:15px;font-weight:700;}
+  .mode-desc{font-size:13px;color:var(--text-2);line-height:1.45;margin:0;flex:1;}
+
+  /* ---------- Last activity ---------- */
+  .last-activity{display:flex;align-items:center;gap:12px;}
+  .last-activity .info{flex:1;min-width:0;}
+  .last-label{font-size:11.5px;color:var(--text-2);font-family:var(--font-mono);letter-spacing:.5px;}
+  .last-title{font-size:14.5px;font-weight:700;margin:3px 0 5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .status-chip{font-size:11px;padding:3px 9px;border-radius:20px;display:inline-block;font-weight:600;}
+  .status-done{background:rgba(34,197,94,0.14);color:var(--success);}
+  .status-progress{background:rgba(245,158,11,0.14);color:var(--warning);}
+
+  /* ---------- Learning screen top bar ---------- */
+  .topbar{display:flex;align-items:center;gap:10px;padding:16px 20px 4px;}
+  .back-btn{display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px 12px;font-size:13px;color:var(--text-2);font-weight:600;}
+  .back-btn:hover{color:var(--primary);border-color:rgba(0,217,255,.35);}
+  .topbar-mid{flex:1;min-width:0;}
+  .topbar-topic{font-size:14.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .topbar-progress{font-family:var(--font-mono);font-size:11.5px;color:var(--text-2);}
+  .topbar-level{font-family:var(--font-mono);font-size:11px;color:var(--secondary);background:rgba(99,102,241,0.14);border:1px solid rgba(99,102,241,.3);padding:4px 8px;border-radius:8px;white-space:nowrap;}
+
+  .mode-tabs{display:flex;gap:8px;padding:12px 20px 0;}
+  .mode-tab{flex:1;text-align:center;padding:9px 6px;border-radius:10px;font-size:12.5px;font-weight:700;background:var(--surface);border:1px solid var(--border);color:var(--text-2);}
+  .mode-tab.active{color:#03222b;background:linear-gradient(135deg,var(--primary),#22c1ea);border-color:transparent;}
+  .mode-tab.locked{opacity:.45;}
+
+  /* ---------- Learn mode ---------- */
+  .concept-title{font-size:18px;font-weight:800;margin:2px 0 10px;display:flex;align-items:center;gap:8px;}
+  .concept-body{font-size:14.5px;line-height:1.65;color:#dbe3ee;margin:0 0 16px;}
+  .code-block{background:#0a0f1c;border:1px solid var(--border);border-radius:12px;padding:14px 16px;font-family:var(--font-mono);font-size:13.5px;color:var(--primary);white-space:pre-wrap;line-height:1.6;margin-bottom:6px;position:relative;}
+  .code-block::before{content:"CÓDIGO";position:absolute;top:-9px;left:12px;background:var(--surface);padding:0 6px;font-size:9.5px;letter-spacing:1.5px;color:var(--text-2);border-radius:4px;}
+
+  /* ---------- Practice mode ---------- */
+  .practice-q{font-size:15px;font-weight:600;margin:0 0 14px;line-height:1.5;}
+  .practice-input-row{display:flex;gap:10px;margin-bottom:6px;}
+  .practice-input{flex:1;background:#0a0f1c;border:1.5px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--primary);font-family:var(--font-mono);font-size:14.5px;outline:none;}
+  .practice-input:focus{border-color:var(--primary);}
+  .practice-input.wrong{border-color:var(--warning);}
+  .practice-input.right{border-color:var(--success);}
+
+  /* ---------- Challenge mode ---------- */
+  .scenario-box{display:flex;gap:10px;background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.3);border-radius:12px;padding:14px;margin-bottom:16px;font-size:14px;line-height:1.55;}
+  .track-wrap{background:#070b15;border:1px solid var(--border);border-radius:14px;padding:18px 10px;margin-bottom:16px;overflow:hidden;}
+  .track{position:relative;height:74px;border-bottom:2px dashed rgba(148,163,184,0.25);margin:0 10px;}
+  .robot{position:absolute;left:6px;bottom:2px;font-size:30px;transition:transform .5s cubic-bezier(.4,0,.2,1),filter .3s;transform:translateX(0) rotate(0deg);filter:drop-shadow(0 0 6px rgba(0,217,255,.5));}
+  .robot .arm{display:inline-block;transition:transform .4s;}
+  .signal-dot{position:absolute;right:8px;top:0;width:10px;height:10px;border-radius:50%;background:#334155;transition:.3s;}
+  .signal-dot.on{background:var(--success);box-shadow:0 0 10px var(--success);}
+  .track-caption{text-align:center;font-family:var(--font-mono);font-size:11px;color:var(--text-2);margin-top:8px;}
+
+  .block-palette{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
+  .block-btn{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:9px 12px;font-size:13px;color:var(--text);font-weight:600;display:flex;align-items:center;gap:6px;}
+  .block-btn:hover{border-color:rgba(0,217,255,.4);color:var(--primary);}
+  .block-btn:disabled{opacity:.35;cursor:not-allowed;}
+
+  .sequence-box{min-height:52px;background:#0a0f1c;border:1.5px dashed var(--border);border-radius:12px;padding:10px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px;}
+  .sequence-empty{color:var(--text-2);font-size:12.5px;font-family:var(--font-mono);}
+  .chip{background:var(--primary-dim);border:1px solid rgba(0,217,255,.4);color:var(--primary);font-family:var(--font-mono);font-size:12px;padding:6px 8px 6px 10px;border-radius:8px;display:flex;align-items:center;gap:6px;}
+  .chip button{background:none;border:none;color:var(--primary);font-size:13px;opacity:.7;line-height:1;padding:0;}
+  .chip button:hover{opacity:1;}
+
+  /* ---------- Feedback ---------- */
+  .feedback{border-radius:14px;padding:14px 16px;display:flex;gap:10px;align-items:flex-start;margin-top:4px;font-size:14px;line-height:1.5;animation:pop .25s ease;}
+  @keyframes pop{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+  .feedback.ok{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.35);}
+  .feedback.bad{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.35);}
+  .feedback .fi{font-size:18px;}
+  .feedback .ft{flex:1;}
+  .feedback .fmain{font-weight:700;margin-bottom:3px;}
+  .feedback .fhint{color:var(--text-2);font-size:13px;}
+
+  /* ---------- Bottom nav ---------- */
+  .learn-actions{display:flex;flex-direction:column;gap:10px;padding:6px 20px 4px;}
+  .nav-row{display:flex;gap:10px;}
+  .nav-row .btn{width:auto;flex:1;}
+
+  /* ---------- Modal ---------- */
+  .modal-overlay{position:fixed;inset:0;background:rgba(3,6,14,.72);backdrop-filter:blur(2px);display:flex;align-items:flex-end;justify-content:center;z-index:50;}
+  .modal{background:var(--surface);border:1px solid var(--border);border-top-left-radius:20px;border-top-right-radius:20px;max-width:640px;width:100%;padding:22px 22px 26px;animation:slideup .22s ease;}
+  @media(min-width:660px){.modal-overlay{align-items:center;}.modal{border-radius:20px;}}
+  @keyframes slideup{from{transform:translateY(24px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+  .modal h3{margin:0 0 10px;font-size:16.5px;}
+  .modal p{color:var(--text-2);font-size:13.5px;line-height:1.55;margin:0 0 18px;}
+  .modal .row{display:flex;gap:10px;}
+
+  .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid rgba(34,197,94,.4);color:var(--success);padding:10px 18px;border-radius:30px;font-size:13px;font-weight:700;z-index:60;box-shadow:0 8px 24px rgba(0,0,0,.4);animation:pop .2s ease;}
+
+  ::selection{background:rgba(0,217,255,.3);}
+  @media (prefers-reduced-motion: reduce){*{animation-duration:0.001ms !important;transition-duration:0.001ms !important;}}
+</style>
+</head>
+<body>
+<div id="app"><div class="boot"><div class="spinner"></div><div>Cargando RoboCode…</div></div></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ============================= DATA ============================= */
+
+const LEVELS = [
+  {id:1, title:"Primeros pasos"},
+  {id:2, title:"Fundamentos del código"},
+  {id:3, title:"Repetición"},
+  {id:4, title:"Robótica básica"},
+];
+
+const BLOCKS = {
+  avanzar:      {label:"Avanzar",          icon:"➡️"},
+  retroceder:   {label:"Retroceder",       icon:"⬅️"},
+  izquierda:    {label:"Girar izquierda",  icon:"↩️"},
+  derecha:      {label:"Girar derecha",    icon:"↪️"},
+  esperar:      {label:"Esperar",          icon:"⏱️"},
+  detener:      {label:"Detener",          icon:"⏹️"},
+  encender_luz: {label:"Encender sensor",  icon:"💡"},
+  apagar_luz:   {label:"Apagar sensor",    icon:"🔅"},
+  motor_on:     {label:"Encender motor",   icon:"⚙️"},
+  motor_off:    {label:"Apagar motor",     icon:"🛑"},
+  servo_mover:  {label:"Mover servo",      icon:"🦾"},
+  leer_entrada: {label:"Leer entrada",     icon:"📥"},
+  enviar_salida:{label:"Enviar salida",    icon:"📤"},
+};
+
+const TOPICS = [
+  {id:"t1", levelId:1, title:"¿Qué es programar?",
+    learn:{body:"Programar es dar instrucciones a una computadora o a un robot para que realice una tarea. Así como sigues una receta de cocina paso a paso, un programa es una lista de pasos que el robot debe seguir en orden.",
+      example:"iniciar\nmover\ndetener"},
+    practice:{question:"Completa la idea: Programar es dar ______ a un robot.", accepted:["instrucciones","ordenes"], hint:"Recuerda: las instrucciones son las órdenes que le damos al robot."},
+    challenge:{scenario:"Ayuda al robot a completar su primera tarea: debe avanzar y luego detenerse.",
+      blocks:["avanzar","detener","izquierda","esperar"], expected:["avanzar","detener"],
+      hint:"Primero debe moverse (avanzar) y después detenerse."}},
+
+  {id:"t2", levelId:1, title:"¿Qué es un robot?",
+    learn:{body:"Un robot es una máquina que puede recibir instrucciones y actuar en el mundo real: moverse, tomar decisiones simples o usar sensores para \"sentir\" lo que ocurre a su alrededor.",
+      example:"robot.nombre = \"R2\"\nrobot.encender()"},
+    practice:{question:"Completa: Un robot usa ______ para percibir su entorno.", accepted:["sensores"], hint:"Los sensores ayudan al robot a percibir lo que lo rodea, como una cámara o un detector de distancia."},
+    challenge:{scenario:"El robot debe encender su sensor para \"ver\" el camino antes de avanzar.",
+      blocks:["encender_luz","avanzar","apagar_luz","esperar"], expected:["encender_luz","avanzar"],
+      hint:"Primero enciende el sensor para ver, luego avanza."}},
+
+  {id:"t3", levelId:1, title:"Instrucciones",
+    learn:{body:"Una instrucción es una orden simple y clara que el robot puede ejecutar, como \"avanzar\" o \"girar\". Cada instrucción debe ser precisa: los robots no entienden órdenes ambiguas.",
+      example:"avanzar()\ngirar_derecha()"},
+    practice:{question:"Completa la instrucción para girar a la derecha: ______()", accepted:["girar_derecha"], hint:"En código, esa instrucción se escribe así: girar_derecha()"},
+    challenge:{scenario:"El robot debe girar a la derecha y luego avanzar.",
+      blocks:["derecha","avanzar","izquierda","detener"], expected:["derecha","avanzar"],
+      hint:"Primero gira a la derecha, luego avanza."}},
+
+  {id:"t4", levelId:1, title:"Secuencia",
+    learn:{body:"Una secuencia es el orden en que se ejecutan las instrucciones. Si cambias el orden, ¡el resultado puede ser completamente distinto! Por eso el orden importa mucho en programación.",
+      example:"avanzar()\ngirar_izquierda()\navanzar()"},
+    practice:{question:"Completa: El ______ en que se ejecutan las instrucciones se llama secuencia.", accepted:["orden"], hint:"La palabra que buscamos es 'orden': el orden de las instrucciones se llama secuencia."},
+    challenge:{scenario:"El robot debe avanzar, girar a la izquierda y avanzar de nuevo, en ese orden exacto.",
+      blocks:["avanzar","izquierda","derecha","detener"], expected:["avanzar","izquierda","avanzar"],
+      hint:"El orden es: avanzar, girar a la izquierda y avanzar otra vez."}},
+
+  {id:"t5", levelId:2, title:"Variables",
+    learn:{body:"Una variable es un espacio donde guardamos información para usarla después, como una cajita con etiqueta. Podemos guardar un nombre, una edad o cualquier otro dato.",
+      example:"nombre = \"Carlos\"\nedad = 16"},
+    practice:{question:"Completa el código para guardar la edad: edad = ______", accepted:["*numeric*"], hint:"La edad se guarda como un número, sin comillas. Por ejemplo: 16"},
+    challenge:{scenario:"El robot debe \"recordar\" que avanzó 3 pasos: avanza tres veces y luego se detiene para guardar el dato.",
+      blocks:["avanzar","detener","izquierda","esperar"], expected:["avanzar","avanzar","avanzar","detener"],
+      hint:"El robot debe avanzar tres veces y luego detenerse para guardar el dato."}},
+
+  {id:"t6", levelId:2, title:"Datos",
+    learn:{body:"Los datos pueden ser de distintos tipos: números (16), texto (\"Ana\") o verdadero/falso. El tipo de dato indica qué operaciones podemos hacer con él.",
+      example:"edad = 16        // número\nnombre = \"Ana\"   // texto\nactivo = true    // verdadero/falso"},
+    practice:{question:"¿Qué tipo de dato es 16? Completa: 16 es un dato de tipo ______.", accepted:["numerico","numero"], hint:"16 es un número, por eso decimos que es un dato de tipo numérico."},
+    challenge:{scenario:"El robot debe leer un dato de su sensor (verdadero/falso) antes de decidir si avanza.",
+      blocks:["leer_entrada","avanzar","detener","esperar"], expected:["leer_entrada","avanzar"],
+      hint:"Primero lee el dato de entrada, luego avanza."}},
+
+  {id:"t7", levelId:2, title:"Operadores",
+    learn:{body:"Los operadores nos permiten combinar o comparar datos: sumar (+), restar (-) o comparar si algo es mayor (>) o igual (==). Por ejemplo: distancia = 5 + 3.",
+      example:"distancia = 5 + 3\nesCorto = distancia < 10"},
+    practice:{question:"Completa para sumar: distancia = 5 ___ 3", accepted:["+"], hint:"Para sumar dos valores en código usamos el símbolo +"},
+    challenge:{scenario:"El robot debe avanzar dos veces para \"sumar\" la distancia total recorrida, y luego detenerse.",
+      blocks:["avanzar","detener","izquierda","esperar"], expected:["avanzar","avanzar","detener"],
+      hint:"Avanza dos veces y luego detente, para sumar la distancia."}},
+
+  {id:"t8", levelId:2, title:"Condicionales",
+    learn:{body:"Un condicional permite que el robot tome decisiones: \"si pasa esto, entonces haz esto otro\". Por ejemplo: si hay un obstáculo, entonces detente.",
+      example:"si obstaculo:\n    detener()\nsino:\n    avanzar()"},
+    practice:{question:"Completa: si hay un obstáculo, el robot debe ______.", accepted:["detener","detenerse"], hint:"Cuando el condicional es verdadero (hay un obstáculo), el robot debe detenerse."},
+    challenge:{scenario:"El sensor detecta un obstáculo: el robot debe encender el sensor y detenerse, en lugar de avanzar.",
+      blocks:["encender_luz","detener","avanzar","izquierda"], expected:["encender_luz","detener"],
+      hint:"Enciende el sensor y detente: hay un obstáculo."}},
+
+  {id:"t9", levelId:3, title:"Ciclos",
+    learn:{body:"Un ciclo permite repetir instrucciones varias veces sin escribirlas una por una. Es como decir: \"repite esto 3 veces\".",
+      example:"repetir 3 veces:\n    avanzar()"},
+    practice:{question:"Completa para repetir 3 veces: repetir ___ veces: avanzar()", accepted:["3"], hint:"Estamos repitiendo avanzar() tres veces, por eso el número es 3."},
+    challenge:{scenario:"Usa un ciclo para hacer que el robot avance 3 veces seguidas.",
+      blocks:["avanzar","detener","izquierda","esperar"], expected:["avanzar","avanzar","avanzar"],
+      hint:"Usa el bloque avanzar tres veces seguidas."}},
+
+  {id:"t10", levelId:3, title:"Repeticiones",
+    learn:{body:"Las repeticiones evitan escribir la misma instrucción muchas veces. En vez de escribir \"avanzar\" cinco veces, usamos un ciclo que lo haga por nosotros.",
+      example:"repetir 5 veces:\n    avanzar()\n    esperar(1)"},
+    practice:{question:"Completa: Las repeticiones evitan escribir el mismo código muchas ______.", accepted:["veces"], hint:"Las repeticiones existen para no repetir el mismo código muchas veces."},
+    challenge:{scenario:"Haz que el robot avance y espere, repitiendo ese patrón dos veces.",
+      blocks:["avanzar","esperar","detener","izquierda"], expected:["avanzar","esperar","avanzar","esperar"],
+      hint:"Repite el patrón avanzar - esperar dos veces."}},
+
+  {id:"t11", levelId:3, title:"Contadores",
+    learn:{body:"Un contador es una variable especial que aumenta (o disminuye) cada vez que un ciclo se repite, para saber cuántas veces se ha ejecutado.",
+      example:"contador = 0\nrepetir 3 veces:\n    contador = contador + 1"},
+    practice:{question:"Completa: contador = contador + ___ (para aumentar de uno en uno)", accepted:["1"], hint:"Un contador aumenta de uno en uno, por eso sumamos 1 cada vez."},
+    challenge:{scenario:"El robot avanza 3 veces mientras un contador lleva la cuenta; al terminar, se detiene.",
+      blocks:["avanzar","detener","izquierda","esperar"], expected:["avanzar","avanzar","avanzar","detener"],
+      hint:"Avanza tres veces y luego detente."}},
+
+  {id:"t12", levelId:4, title:"Sensores",
+    learn:{body:"Los sensores permiten que el robot perciba el mundo: distancia, luz, sonido o toque. Gracias a ellos el robot puede reaccionar a lo que ocurre a su alrededor.",
+      example:"distancia = sensor.leer()\nsi distancia < 10:\n    detener()"},
+    practice:{question:"Completa: Un sensor permite al robot ______ su entorno.", accepted:["percibir","detectar","sentir"], hint:"Un sensor ayuda al robot a percibir o detectar lo que sucede a su alrededor."},
+    challenge:{scenario:"Activa el sensor de distancia antes de avanzar, para que el robot \"vea\" el camino.",
+      blocks:["encender_luz","avanzar","apagar_luz","detener"], expected:["encender_luz","avanzar"],
+      hint:"Enciende el sensor antes de avanzar."}},
+
+  {id:"t13", levelId:4, title:"Motores",
+    learn:{body:"Los motores son los que permiten que el robot se mueva: giran las ruedas hacia adelante, atrás o en distintas direcciones.",
+      example:"motor.encender()\nmotor.velocidad(5)"},
+    practice:{question:"Completa: Los ______ permiten que el robot se mueva.", accepted:["motores"], hint:"Los motores son las piezas que mueven las ruedas del robot."},
+    challenge:{scenario:"Enciende el motor, haz avanzar al robot y luego apaga el motor.",
+      blocks:["motor_on","avanzar","motor_off","detener"], expected:["motor_on","avanzar","motor_off"],
+      hint:"Enciende el motor, avanza, y apágalo al final."}},
+
+  {id:"t14", levelId:4, title:"Servos",
+    learn:{body:"Un servomotor (servo) es un motor especial que se mueve a un ángulo exacto, útil para mover un brazo robótico o girar una pieza con precisión.",
+      example:"servo.mover(90)  // gira a 90 grados"},
+    practice:{question:"Completa: El servo se mueve a un ______ exacto.", accepted:["angulo"], hint:"Un servo se mueve a un ángulo exacto, como 90 grados."},
+    challenge:{scenario:"El robot debe mover su servo (brazo) antes de avanzar, para tomar un objeto.",
+      blocks:["servo_mover","avanzar","detener","izquierda"], expected:["servo_mover","avanzar"],
+      hint:"Mueve el servo antes de avanzar."}},
+
+  {id:"t15", levelId:4, title:"Entradas y salidas",
+    learn:{body:"Las entradas son datos que el robot recibe (como un sensor), y las salidas son acciones que el robot realiza (como mover un motor o encender una luz).",
+      example:"entrada = sensor.leer()\nsalida = motor.mover()"},
+    practice:{question:"Completa: Un sensor es un tipo de ______ (entrada o salida).", accepted:["entrada"], hint:"Un sensor es un ejemplo de entrada: información que el robot recibe."},
+    challenge:{scenario:"El robot lee una entrada del sensor, envía una señal de salida y luego avanza.",
+      blocks:["leer_entrada","enviar_salida","avanzar","detener"], expected:["leer_entrada","enviar_salida","avanzar"],
+      hint:"Primero lee la entrada, luego envía la señal de salida y avanza."}},
+];
+
+const MODES = [
+  {id:"learn",    label:"Aprender",  icon:"📘", accent:"var(--primary)",  bg:"rgba(0,217,255,.14)",  border:"rgba(0,217,255,.35)", cardDesc:"Aprende los conceptos desde cero con explicaciones sencillas.", cta:"Empezar lección"},
+  {id:"practice", label:"Practicar", icon:"⌨️", accent:"var(--secondary)",bg:"rgba(99,102,241,.14)", border:"rgba(99,102,241,.35)", cardDesc:"Pon a prueba lo que aprendiste con ejercicios cortos.", cta:"Practicar"},
+  {id:"challenge",label:"Retos",     icon:"🤖", accent:"var(--success)",  bg:"rgba(34,197,94,.14)",  border:"rgba(34,197,94,.35)", cardDesc:"Resuelve desafíos y dale instrucciones a un robot real.", cta:"Ver retos"},
+];
+
+const STORAGE_KEY = "robocode_progress_v1";
+const TOTAL_TOPICS = TOPICS.length;
+const TOTAL_ACTIVITIES = TOPICS.length * 3;
+
+/* ============================= STATE ============================= */
+
+let progress = null;     // loaded async
+let screen = "loading";  // loading | home | learning
+let topicIndex = 0;
+let mode = "learn";
+let sequence = [];        // current challenge block sequence
+let lastResult = null;    // {ok, hint} for currently shown activity
+let practiceInput = "";
+let practiceState = "idle"; // idle | wrong | right
+let animating = false;
+let modal = null;          // null | 'settings' | 'confirmReset'
+let toastMsg = null;
+
+const app = document.getElementById("app");
+
+/* ============================= STORAGE ============================= */
+
+function defaultProgress(){
+  return { activities:{}, lastActivity:null };
+}
+
+async function loadProgress(){
+  try{
+    const res = await window.storage.get(STORAGE_KEY, false);
+    if(res && res.value){
+      const parsed = JSON.parse(res.value);
+      if(parsed && typeof parsed === "object" && parsed.activities){ return parsed; }
+    }
+    return defaultProgress();
+  }catch(e){
+    return defaultProgress();
+  }
+}
+
+async function saveProgress(){
+  try{
+    await window.storage.set(STORAGE_KEY, JSON.stringify(progress), false);
+  }catch(e){ /* silent: keep working in-memory even if persistence fails */ }
+}
+
+/* ============================= HELPERS ============================= */
+
+function actKey(topicId, m){ return topicId + ":" + m; }
+function isDone(topicId, m){ return !!progress.activities[actKey(topicId,m)]; }
+function markDone(topicId, m){ progress.activities[actKey(topicId,m)] = true; }
+
+function isTopicUnlocked(idx){
+  if(idx <= 0) return true;
+  const prev = TOPICS[idx-1];
+  return isDone(prev.id, "learn");
+}
+
+function conceptsCompleted(){ return TOPICS.filter(t=>isDone(t.id,"learn")).length; }
+
+function completedActivitiesCount(){
+  let n=0;
+  TOPICS.forEach(t=>{ ["learn","practice","challenge"].forEach(m=>{ if(isDone(t.id,m)) n++; }); });
+  return n;
+}
+
+function overallPercent(){ return Math.round((completedActivitiesCount()/TOTAL_ACTIVITIES)*100); }
+
+function currentLevel(){
+  const firstUnfinished = TOPICS.find(t => !(isDone(t.id,"learn") && isDone(t.id,"practice") && isDone(t.id,"challenge")));
+  const topic = firstUnfinished || TOPICS[TOPICS.length-1];
+  return LEVELS.find(l=>l.id===topic.levelId);
+}
+
+function findTargetTopicIndex(m){
+  for(let i=0;i<TOPICS.length;i++){
+    if(isTopicUnlocked(i) && !isDone(TOPICS[i].id, m)) return i;
+  }
+  for(let i=TOPICS.length-1;i>=0;i--){ if(isTopicUnlocked(i)) return i; }
+  return 0;
+}
+
+function normalize(s){
+  return (s||"").toString().trim().toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+    .replace(/[()"']/g,"");
+}
+
+function checkPractice(topic){
+  const accepted = topic.practice.accepted;
+  const val = normalize(practiceInput);
+  if(!val) return false;
+  if(accepted.includes("*numeric*")) return /^\d{1,3}$/.test(val);
+  return accepted.some(a => normalize(a) === val);
+}
+
+function arraysEqual(a,b){
+  return a.length===b.length && a.every((v,i)=>v===b[i]);
+}
+
+function escapeHtml(s){
+  return (s||"").replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+}
+
+function wait(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+/* ============================= NAVIGATION ============================= */
+
+function goHome(){
+  screen="home"; modal=null; render();
+}
+
+function openTopic(idx, m){
+  topicIndex = idx; mode = m; sequence = []; lastResult = null;
+  practiceInput=""; practiceState="idle"; screen="learning"; render();
+}
+
+function continueLearning(){
+  if(progress.lastActivity){
+    const idx = TOPICS.findIndex(t=>t.id===progress.lastActivity.topicId);
+    if(idx>=0){ openTopic(idx, progress.lastActivity.mode); return; }
+  }
+  openTopic(0, "learn");
+}
+
+/* ============================= RENDER: HOME ============================= */
+
+function renderHome(){
+  const lvl = currentLevel();
+  const pct = overallPercent();
+  const cc = conceptsCompleted();
+
+  const last = progress.lastActivity;
+  let lastBlock = "";
+  if(last){
+    const t = TOPICS.find(x=>x.id===last.topicId);
+    const mDef = MODES.find(x=>x.id===last.mode);
+    const done = isDone(last.topicId, last.mode);
+    lastBlock = `
+      <div class="card card-tight last-activity">
+        <div style="font-size:22px;">${mDef.icon}</div>
+        <div class="info">
+          <div class="last-label">ÚLTIMA ACTIVIDAD · ${escapeHtml(mDef.label).toUpperCase()}</div>
+          <div class="last-title">${escapeHtml(t.title)}</div>
+          <span class="status-chip ${done?'status-done':'status-progress'}">${done?'Completado':'En progreso'}</span>
+        </div>
+        <button class="btn btn-secondary btn-sm" data-action="continue-last">Continuar</button>
+      </div>`;
+  }
+
+  app.innerHTML = `
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-name"><span class="mark">🤖</span> RoboCode</div>
+        <div class="brand-sub">Aprende a programar robots desde cero</div>
+      </div>
+      <div class="header-actions">
+        <div class="pill">${pct}%</div>
+        <button class="icon-btn" data-action="open-settings" title="Configuración">⚙️</button>
+      </div>
+    </header>
+    <main>
+      <div class="card">
+        <div class="welcome-title">¡Hola, futuro programador! 👋</div>
+        <p class="welcome-text">Aprende los fundamentos del código y descubre cómo darle instrucciones a un robot.</p>
+        <button class="btn btn-primary" data-action="continue">Continuar aprendiendo →</button>
+      </div>
+
+      <div class="card">
+        <div class="level-row">
+          <div>
+            <div class="level-tag">NIVEL ${lvl.id}</div>
+            <div class="level-title">${escapeHtml(lvl.title)}</div>
+          </div>
+          <div class="level-pct">${pct}%</div>
+        </div>
+        <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+        <div class="progress-caption">${cc} de ${TOTAL_TOPICS} conceptos completados</div>
+      </div>
+
+      <div>
+        <div class="section-title" style="margin-bottom:10px;">¿Cómo quieres aprender?</div>
+        <div class="mode-grid">
+          ${MODES.map(m=>`
+            <div class="mode-card" style="--accent-glow:${m.bg}">
+              <div class="mode-icon" style="background:${m.bg};border-color:${m.border};">${m.icon}</div>
+              <div class="mode-name">${m.label.toUpperCase()}</div>
+              <p class="mode-desc">${m.cardDesc}</p>
+              <button class="btn btn-secondary" data-action="mode-start" data-mode="${m.id}">${m.cta}</button>
+            </div>`).join("")}
+        </div>
+      </div>
+
+      ${lastBlock}
+
+      <div style="text-align:center;padding-top:6px;">
+        <button class="btn-ghost" style="background:none;border:none;font-size:12px;color:var(--text-2);" data-action="open-info">ⓘ ¿Cómo se guarda mi progreso?</button>
+      </div>
+    </main>
+  `;
+}
+
+/* ============================= RENDER: LEARNING ============================= */
+
+function renderLearning(){
+  const topic = TOPICS[topicIndex];
+  const lvl = LEVELS.find(l=>l.id===topic.levelId);
+  const posInLevel = TOPICS.filter(t=>t.levelId===topic.levelId).indexOf(topic)+1;
+  const totalInLevel = TOPICS.filter(t=>t.levelId===topic.levelId).length;
+
+  const tabsHtml = MODES.map(m=>{
+    const active = m.id===mode;
+    return `<button class="mode-tab ${active?'active':''}" data-action="switch-mode" data-mode="${m.id}">${m.icon} ${m.label}</button>`;
+  }).join("");
+
+  let body = "";
+  if(mode==="learn") body = renderLearnBody(topic);
+  else if(mode==="practice") body = renderPracticeBody(topic);
+  else body = renderChallengeBody(topic);
+
+  const doneNow = isDone(topic.id, mode);
+  const canNext = doneNow && topicIndex < TOPICS.length-1;
+  const canPrev = topicIndex > 0;
+
+  app.innerHTML = `
+    <div class="topbar">
+      <button class="back-btn" data-action="go-home">← Volver</button>
+      <div class="topbar-mid">
+        <div class="topbar-topic">${escapeHtml(topic.title)}</div>
+        <div class="topbar-progress">${posInLevel}/${totalInLevel}</div>
+      </div>
+      <div class="topbar-level">NIVEL ${lvl.id}</div>
+    </div>
+    <div class="mode-tabs">${tabsHtml}</div>
+    <main>
+      <div class="card">
+        ${body}
+      </div>
+      ${lastResult ? renderFeedback() : ""}
+    </main>
+    <div class="learn-actions">
+      <div class="nav-row">
+        <button class="btn btn-ghost" data-action="nav-prev" ${canPrev?"":"disabled"}>← Anterior</button>
+        <button class="btn ${canNext?'btn-primary':'btn-ghost'}" data-action="nav-next" ${canNext?"":"disabled"}>Siguiente →</button>
+      </div>
+      <button class="btn btn-secondary" data-action="go-home">Volver al inicio</button>
+    </div>
+  `;
+
+  if(mode==="practice"){
+    const input = document.getElementById("practice-input");
+    if(input){
+      input.value = practiceInput;
+      input.focus({preventScroll:true});
+      const len = input.value.length;
+      input.setSelectionRange(len,len);
+    }
+  }
+}
+
+function renderLearnBody(topic){
+  const done = isDone(topic.id, "learn");
+  return `
+    <div class="concept-title">📘 ${escapeHtml(topic.title)}</div>
+    <p class="concept-body">${escapeHtml(topic.learn.body)}</p>
+    <div class="code-block">${escapeHtml(topic.learn.example)}</div>
+    <div style="height:14px;"></div>
+    <button class="btn ${done?'btn-secondary':'btn-primary'}" data-action="complete-learn">${done?'✓ Entendido':'Entendido →'}</button>
+  `;
+}
+
+function renderPracticeBody(topic){
+  const done = isDone(topic.id, "practice");
+  const cls = practiceState==="wrong" ? "wrong" : practiceState==="right" ? "right" : "";
+  return `
+    <div class="concept-title">⌨️ Practica: ${escapeHtml(topic.title)}</div>
+    <p class="practice-q">${escapeHtml(topic.practice.question)}</p>
+    <div class="practice-input-row">
+      <input id="practice-input" class="practice-input ${cls}" type="text" placeholder="Escribe tu respuesta" autocomplete="off" ${done && practiceState!=="wrong" ? "" : ""} />
+    </div>
+    <button class="btn btn-primary" data-action="check-practice">Comprobar</button>
+  `;
+}
+
+function renderChallengeBody(topic){
+  const seqHtml = sequence.length
+    ? sequence.map((b,i)=>`<span class="chip">${BLOCKS[b].icon} ${BLOCKS[b].label}${animating?'':`<button data-action="remove-block" data-idx="${i}">✕</button>`}</span>`).join("")
+    : `<span class="sequence-empty">Toca los bloques para armar la secuencia…</span>`;
+
+  return `
+    <div class="concept-title">🤖 Reto: ${escapeHtml(topic.title)}</div>
+    <div class="scenario-box"><span>🛰️</span><span>${escapeHtml(topic.challenge.scenario)}</span></div>
+
+    <div class="track-wrap">
+      <div class="track">
+        <div id="robot" class="robot">🤖<span class="arm" id="robot-arm"></span></div>
+        <div id="signal" class="signal-dot"></div>
+      </div>
+      <div class="track-caption">SIMULADOR DE ROBOT</div>
+    </div>
+
+    <div class="block-palette">
+      ${topic.challenge.blocks.map(b=>`<button class="block-btn" data-action="add-block" data-block="${b}" ${animating?"disabled":""}>${BLOCKS[b].icon} ${BLOCKS[b].label}</button>`).join("")}
+    </div>
+
+    <div class="sequence-box">${seqHtml}</div>
+
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-secondary" data-action="clear-sequence" ${animating||!sequence.length?"disabled":""}>Limpiar</button>
+      <button class="btn btn-primary" data-action="run-challenge" ${animating||!sequence.length?"disabled":""}>▶ Ejecutar</button>
+    </div>
+  `;
+}
+
+function renderFeedback(){
+  if(!lastResult) return "";
+  const ok = lastResult.ok;
+  return `
+    <div class="feedback ${ok?'ok':'bad'}">
+      <div class="fi">${ok?'✅':'⚠️'}</div>
+      <div class="ft">
+        <div class="fmain">${ok?'¡Muy bien! El robot entendió la instrucción.':'Casi. Revisa la instrucción y vuelve a intentarlo.'}</div>
+        ${(!ok && lastResult.hint) ? `<div class="fhint">${escapeHtml(lastResult.hint)}</div>` : ""}
+      </div>
+    </div>
+  `;
+}
+
+/* ============================= MODALS / TOAST ============================= */
+
+function renderModal(){
+  if(!modal) return "";
+  if(modal==="info" || modal==="settings"){
+    return `
+      <div class="modal-overlay" data-action="close-modal">
+        <div class="modal" onclick="event.stopPropagation()">
+          <h3>⚙️ Tu progreso</h3>
+          <p>RoboCode guarda tu avance automáticamente, sin necesidad de crear una cuenta ni iniciar sesión. No hace falta ningún botón de "Guardar": cada actividad que completas se registra sola.<br><br>
+          Ten en cuenta que si se borran los datos de esta sesión, tu progreso podría perderse.</p>
+          <div class="row" style="flex-direction:column;">
+            <button class="btn btn-danger" data-action="ask-reset">Reiniciar progreso</button>
+            <button class="btn btn-ghost" data-action="close-modal">Cerrar</button>
+          </div>
+        </div>
+      </div>`;
+  }
+  if(modal==="confirmReset"){
+    return `
+      <div class="modal-overlay" data-action="close-modal">
+        <div class="modal" onclick="event.stopPropagation()">
+          <h3>¿Reiniciar todo tu progreso?</h3>
+          <p>Se borrarán tus niveles, ejercicios y retos completados. Esta acción no se puede deshacer.</p>
+          <div class="row">
+            <button class="btn btn-ghost" data-action="close-modal">Cancelar</button>
+            <button class="btn btn-danger" data-action="do-reset">Sí, reiniciar</button>
+          </div>
+        </div>
+      </div>`;
+  }
+  return "";
+}
+
+function showToast(msg){
+  toastMsg = msg;
+  render();
+  setTimeout(()=>{ toastMsg=null; render(); }, 1800);
+}
+
+/* ============================= MAIN RENDER ============================= */
+
+function render(){
+  if(screen==="home") renderHome();
+  else if(screen==="learning") renderLearning();
+
+  const overlay = renderModal();
+  if(overlay) app.insertAdjacentHTML("beforeend", overlay);
+  if(toastMsg) app.insertAdjacentHTML("beforeend", `<div class="toast">${escapeHtml(toastMsg)}</div>`);
+}
+
+/* ============================= ACTIONS ============================= */
+
+async function completeActivity(topic, m, ok, hint){
+  lastResult = {ok, hint};
+  if(ok){
+    markDone(topic.id, m);
+    progress.lastActivity = {topicId:topic.id, mode:m};
+    await saveProgress();
+  }
+  render();
+}
+
+function onCompleteLearn(){
+  const topic = TOPICS[topicIndex];
+  completeActivity(topic, "learn", true, null);
+}
+
+function onCheckPractice(){
+  const topic = TOPICS[topicIndex];
+  const ok = checkPractice(topic);
+  practiceState = ok ? "right" : "wrong";
+  completeActivity(topic, "practice", ok, ok ? null : topic.practice.hint);
+}
+
+async function onRunChallenge(){
+  if(animating || !sequence.length) return;
+  animating = true;
+  lastResult = null;
+  render();
+
+  const robot = document.getElementById("robot");
+  const arm = document.getElementById("robot-arm");
+  const signal = document.getElementById("signal");
+  let x = 0, rot = 0;
+
+  for(const b of sequence){
+    if(!robot) break;
+    if(b==="avanzar"){ x += 46; }
+    else if(b==="retroceder"){ x -= 46; }
+    else if(b==="izquierda"){ rot -= 90; }
+    else if(b==="derecha"){ rot += 90; }
+    else if(b==="encender_luz" || b==="motor_on"){ if(signal) signal.classList.add("on"); }
+    else if(b==="apagar_luz" || b==="motor_off"){ if(signal) signal.classList.remove("on"); }
+    else if(b==="servo_mover" && arm){ arm.style.transform = arm.style.transform ? "" : "rotate(45deg)"; }
+    else if(b==="leer_entrada" || b==="enviar_salida"){ if(signal){ signal.classList.add("on"); await wait(180); signal.classList.remove("on"); } }
+
+    if(robot) robot.style.transform = `translateX(${x}px) rotate(${rot}deg)`;
+    await wait(520);
+  }
+
+  const topic = TOPICS[topicIndex];
+  const ok = arraysEqual(sequence, topic.challenge.expected);
+  animating = false;
+  completeActivity(topic, "challenge", ok, ok ? null : topic.challenge.hint);
+}
+
+function nextTargetForMode(m){
+  return findTargetTopicIndex(m);
+}
+
+/* ============================= EVENTS ============================= */
+
+app.addEventListener("click", function(e){
+  const el = e.target.closest("[data-action]");
+  if(!el) return;
+  const action = el.getAttribute("data-action");
+
+  if(action==="continue"){ continueLearning(); return; }
+  if(action==="continue-last"){ continueLearning(); return; }
+  if(action==="mode-start"){
+    const m = el.getAttribute("data-mode");
+    openTopic(nextTargetForMode(m), m);
+    return;
+  }
+  if(action==="open-settings" || action==="open-info"){ modal="settings"; render(); return; }
+  if(action==="close-modal"){ modal=null; render(); return; }
+  if(action==="ask-reset"){ modal="confirmReset"; render(); return; }
+  if(action==="do-reset"){
+    progress = defaultProgress();
+    saveProgress();
+    modal=null; screen="home"; render();
+    return;
+  }
+
+  if(action==="go-home"){ goHome(); return; }
+  if(action==="switch-mode"){
+    const m = el.getAttribute("data-mode");
+    mode = m; sequence=[]; lastResult=null; practiceInput=""; practiceState="idle";
+    render();
+    return;
+  }
+  if(action==="complete-learn"){ onCompleteLearn(); return; }
+  if(action==="check-practice"){ onCheckPractice(); return; }
+
+  if(action==="add-block"){
+    if(animating) return;
+    sequence.push(el.getAttribute("data-block"));
+    render();
+    return;
+  }
+  if(action==="remove-block"){
+    if(animating) return;
+    const idx = parseInt(el.getAttribute("data-idx"),10);
+    sequence.splice(idx,1);
+    render();
+    return;
+  }
+  if(action==="clear-sequence"){ sequence=[]; render(); return; }
+  if(action==="run-challenge"){ onRunChallenge(); return; }
+
+  if(action==="nav-prev"){
+    if(topicIndex>0){ openTopic(topicIndex-1, mode); }
+    return;
+  }
+  if(action==="nav-next"){
+    if(topicIndex<TOPICS.length-1 && isDone(TOPICS[topicIndex].id, mode)){
+      openTopic(topicIndex+1, mode);
+    }
+    return;
+  }
+});
+
+app.addEventListener("input", function(e){
+  if(e.target && e.target.id==="practice-input"){
+    practiceInput = e.target.value;
+    if(practiceState!=="idle"){ practiceState="idle"; lastResult=null; }
+  }
+});
+
+app.addEventListener("keydown", function(e){
+  if(e.target && e.target.id==="practice-input" && e.key==="Enter"){
+    onCheckPractice();
+  }
+});
+
+/* ============================= INIT ============================= */
+
+(async function init(){
+  progress = await loadProgress();
+  screen = "home";
+  render();
+})();
+
+})();
+</script>
+</body>
+</html>
